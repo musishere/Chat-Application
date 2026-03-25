@@ -5,9 +5,15 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/golang-jwt/jwt/v4"
 	"github.com/musishere/chat-app/internal/util"
 )
 
+type MyJwtClaims struct {
+	ID       string `json:"id"`
+	Username string `json:"username"`
+	jwt.RegisteredClaims
+}
 type service struct {
 	Repository Repository
 	timeout    time.Duration
@@ -22,6 +28,7 @@ func NewService(repo Repository) Service {
 
 func (s *service) CreateUser(c context.Context, req CreateUserReq) (CreateUserRes, error) {
 	ctx, cancel := context.WithTimeout(c, s.timeout)
+	defer cancel()
 
 	// hash the user password\
 	hashedPassword, err := util.HashPassword(req.Password)
@@ -46,6 +53,22 @@ func (s *service) CreateUser(c context.Context, req CreateUserReq) (CreateUserRe
 		Email:    r.Email,
 	}
 
-	defer cancel()
 	return res, nil
+}
+
+func (s *service) LoginUser(c *context.Context, req LoginUserReq) (*LoginUserRes, error) {
+	ctx, cancel := context.WithTimeout(c, s.timeout)
+	defer cancel()
+
+	u, err := s.Repository.GetUserByEmail(ctx, req.Email)
+	if err != nil {
+		return &LoginUserRes{}, err
+	}
+
+	err = util.CheckPassword(req.Password, u.password)
+	if err != nil {
+		return &LoginUserRes{}, nil
+	}
+
+	jwt.NewWithClaims(jwt.SigningMethodHS256)
 }
