@@ -9,7 +9,11 @@ import (
 	"github.com/musishere/chat-app/internal/util"
 )
 
-type MyJwtClaims struct {
+const (
+	secretKey = "secret"
+)
+
+type MyJWTClaims struct {
 	ID       string `json:"id"`
 	Username string `json:"username"`
 	jwt.RegisteredClaims
@@ -55,8 +59,7 @@ func (s *service) CreateUser(c context.Context, req CreateUserReq) (CreateUserRe
 
 	return res, nil
 }
-
-func (s *service) LoginUser(c *context.Context, req LoginUserReq) (*LoginUserRes, error) {
+func (s *service) Login(c context.Context, req *LoginUserReq) (*LoginUserRes, error) {
 	ctx, cancel := context.WithTimeout(c, s.timeout)
 	defer cancel()
 
@@ -65,10 +68,24 @@ func (s *service) LoginUser(c *context.Context, req LoginUserReq) (*LoginUserRes
 		return &LoginUserRes{}, err
 	}
 
-	err = util.CheckPassword(req.Password, u.password)
+	err = util.CheckPassword(req.Password, u.Password)
 	if err != nil {
-		return &LoginUserRes{}, nil
+		return &LoginUserRes{}, err
 	}
 
-	jwt.NewWithClaims(jwt.SigningMethodHS256)
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, MyJWTClaims{
+		ID:       strconv.Itoa(int(u.ID)),
+		Username: u.Username,
+		RegisteredClaims: jwt.RegisteredClaims{
+			Issuer:    strconv.Itoa(int(u.ID)),
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)),
+		},
+	})
+
+	ss, err := token.SignedString([]byte(secretKey))
+	if err != nil {
+		return &LoginUserRes{}, err
+	}
+
+	return &LoginUserRes{accessToken: ss, Username: u.Username, ID: strconv.Itoa(int(u.ID))}, nil
 }
