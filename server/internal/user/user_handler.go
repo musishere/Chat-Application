@@ -31,3 +31,25 @@ func (h *Handler) CreateUser(c *gin.Context) {
 
 	c.JSON(http.StatusOK, res)
 }
+
+func (h *Handler) LoginUser(c *gin.Context) {
+	var user LoginUserReq
+	if err := c.ShouldBindJSON(&user); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	res, err := h.Service.Login(c, &user)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.SetCookie("jwt", res.accessToken, 36000, "/", "localhost", false, true)
+
+	c.JSON(http.StatusOK, res)
+}
+
+func (h *Handler) LogoutUser(c *gin.Context) {
+	c.SetCookie("jwt", "", -1, "", "localhost", false, true)
+	c.JSON(http.StatusOK, gin.H{"message": "Logout successfull"})
+}
