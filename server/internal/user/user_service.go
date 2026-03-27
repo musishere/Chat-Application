@@ -26,12 +26,12 @@ type service struct {
 func NewService(repo Repository) Service {
 	return &service{
 		Repository: repo,
-		timeout:    time.Duration(2) * time.Millisecond,
+		timeout:    time.Duration(2) * time.Second,
 	}
 }
 
 func (s *service) CreateUser(c context.Context, req CreateUserReq) (CreateUserRes, error) {
-	ctx, cancel := context.WithTimeout(c, s.timeout)
+	ctx, cancel := context.WithTimeout(c, 5*s.timeout)
 	defer cancel()
 
 	// hash the user password\

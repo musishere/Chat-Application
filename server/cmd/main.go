@@ -18,6 +18,7 @@ func main() {
 	userSvc := user.NewService(userRepo)
 	userHandler := user.NewHandler(userSvc)
 
+	// http://localhost:8000/signup
 	router.InitRouter(*userHandler)
 	router.Start("0.0.0.0:8000")
 }

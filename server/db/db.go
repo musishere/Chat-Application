@@ -11,7 +11,7 @@ type Database struct {
 }
 
 func NewDbConnection() (*Database, error) {
-	db, err := sql.Open("postgres", "postgresql://postgres:postgres@localhost:5433/go-chat?sslmode=disable")
+	db, err := sql.Open("postgres", "postgresql://postgres:postgres@localhost:5433/gochat?sslmode=disable")
 	if err != nil {
 		return nil, err
 	}
