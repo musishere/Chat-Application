@@ -6,6 +6,7 @@ import (
 	"github.com/musishere/chat-app/db"
 	"github.com/musishere/chat-app/internal/router"
 	"github.com/musishere/chat-app/internal/user"
+	"github.com/musishere/chat-app/internal/ws"
 )
 
 func main() {
@@ -18,7 +19,10 @@ func main() {
 	userSvc := user.NewService(userRepo)
 	userHandler := user.NewHandler(userSvc)
 
+	hub := ws.NewHub()
+	wsHandler := ws.NewHandler(hub)
+
 	// http://localhost:8000/signup
-	router.InitRouter(*userHandler)
+	router.InitRouter(*userHandler, wsHandler)
 	router.Start("0.0.0.0:8000")
 }
