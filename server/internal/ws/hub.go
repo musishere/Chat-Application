@@ -26,7 +26,8 @@ func (h *Hub) Run() {
 	for {
 		select {
 		case cl := <-h.Register:
-			if err := h.Rooms[cl.ID]; err == nil {
+			// if room id exists, add client to room
+			if _, ok := h.Rooms[cl.RoomID]; ok {
 				r := h.Rooms[cl.RoomID]
 
 				if _, ok := r.Clients[cl.ID]; !ok {
@@ -34,7 +35,24 @@ func (h *Hub) Run() {
 				}
 			}
 		case cl := <-h.Unregister:
+			if _, ok := h.Rooms[cl.RoomID]; ok {
+				if _, ok := h.Rooms[cl.RoomID].Clients[cl.ID]; ok {
+					delete(h.Rooms[cl.RoomID].Clients, cl.ID)
+					close(cl.Message)
+				}
+			}
 		case m := <-h.Broadcast:
+			if _, ok := h.Rooms[m.RoomID]; ok {
+				r := h.Rooms[m.RoomID]
+				for _, cl := range r.Clients {
+					select {
+					case cl.Message <- m:
+					default:
+						close(cl.Message)
+						delete(r.Clients, cl.ID)
+					}
+				}
+			}
 		}
 	}
 }
